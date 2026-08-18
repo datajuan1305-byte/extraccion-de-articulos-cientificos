@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extracción de Artículos Científicos con DeepSeek</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="lang-bar">
+            <label for="langSelect" data-i18n="lang_label">Idioma / Language / Idioma:</label>
+            <select id="langSelect">
+                <option value="es">Español</option>
+                <option value="en">English</option>
+                <option value="pt">Português</option>
+            </select>
+        </div>
+
+        <h1>📄 <span data-i18n="page_title">Extracción de Datos de Artículos Científicos</span></h1>
+        <p class="subtitle" data-i18n="subtitle">Usa DeepSeek para extraer información estructurada de tus PDFs</p>
+
+        <div id="accountBar" class="account-bar" style="display:none;">
+            <span id="accountEmail"></span>
+            <span id="accountCredits" class="badge"></span>
+            <button id="buyCreditsBtn" class="btn primary small" data-i18n="buy_credits_btn">💳 Comprar créditos</button>
+        </div>
+
+        <div id="pricingModal" class="pricing-modal" style="display:none;">
+            <div class="pricing-modal-content">
+                <button id="closePricingBtn" class="pricing-close">✕</button>
+                <h2 data-i18n="pricing_title">Comprar créditos</h2>
+                <div id="pricingTiers" class="pricing-tiers"></div>
+            </div>
+        </div>
+
+        <div class="step" id="identifyStep">
+            <h2 data-i18n="identify_title">0. Identifícate</h2>
+            <p data-i18n="identify_desc">Escribe tu email para empezar. Tu primer artículo es gratis.</p>
+            <div class="input-group">
+                <input type="email" id="emailInput" placeholder="tu@email.com">
+                <button id="identifyBtn" class="btn primary" data-i18n="identify_btn">Continuar</button>
+            </div>
+            <div id="identifyStatus" class="status"></div>
+        </div>
+
+        <div id="mainSteps" style="display:none;">
+
+        <div class="step">
+            <h2 data-i18n="step1_title">1. Define las columnas</h2>
+            <p data-i18n="step1_desc">Marca las secciones típicas que quieres extraer, o agrega otras personalizadas:</p>
+
+            <div id="presetColumns" class="preset-columns"></div>
+
+            <p class="custom-columns-label" data-i18n="custom_columns_label">Otras columnas personalizadas (separadas por comas):</p>
+            <div class="input-group">
+                <input type="text" id="columnsInput" placeholder="Ej: Composición química, Aplicaciones">
+                <button id="setColumnsBtn" class="btn primary" data-i18n="define_columns_btn">Definir columnas</button>
+            </div>
+            <div id="columnsStatus" class="status"></div>
+        </div>
+
+        <div class="step">
+            <h2 data-i18n="step2_title">2. Sube los artículos</h2>
+            <p data-i18n="step2_desc">Selecciona uno o varios archivos PDF:</p>
+            <input type="file" id="fileInput" multiple accept=".pdf">
+            <button id="uploadBtn" class="btn primary" data-i18n="upload_btn">Subir y procesar</button>
+            <div id="uploadStatus" class="status"></div>
+        </div>
+
+        <div class="step">
+            <h2 data-i18n="step3_title">3. Resultados</h2>
+            <div id="resultsContainer">
+                <p class="placeholder" data-i18n="results_placeholder">Aún no hay datos procesados.</p>
+            </div>
+        </div>
+
+        <div class="step">
+            <p class="format-label" data-i18n="format_label">Formato de descarga:</p>
+            <select id="exportFormat" class="format-select">
+                <option value="xlsx">Excel (.xlsx)</option>
+                <option value="csv">CSV (.csv)</option>
+                <option value="json">JSON (.json)</option>
+            </select>
+            <button id="generateExcelBtn" class="btn success" data-i18n="generate_excel_btn">📊 Generar Excel</button>
+            <button id="resetBtn" class="btn danger" data-i18n="reset_btn">🔄 Reiniciar</button>
+        </div>
+
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
