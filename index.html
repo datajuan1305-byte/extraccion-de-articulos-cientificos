@@ -1,94 +1,270 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Extracción de Artículos Científicos con DeepSeek</title>
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Extracción de Artículos Científicos — Datos estructurados desde tus PDFs</title>
+<meta name="description" content="Convierte artículos científicos en PDF a datos estructurados (Excel, CSV, JSON) con IA. Título, autores, DOI, resumen, metodología y más.">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --ink: #10161A;
+    --ink-2: #182229;
+    --paper: #F4EFE3;
+    --paper-dim: #C9C2AF;
+    --brass: #C9A227;
+    --brass-soft: #8f7422;
+    --line: rgba(244,239,227,0.14);
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .serif{ font-family: 'Source Serif 4', serif; }
+  .mono{ font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.01em; }
+
+  a{ color: inherit; }
+
+  .wrap{ max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+
+  /* ---------- Header ---------- */
+  header{
+    position: sticky; top:0; z-index: 20;
+    background: rgba(16,22,26,0.86);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding: 18px 0; }
+  .brand{ font-family:'Source Serif 4', serif; font-weight:700; font-size: 19px; letter-spacing: 0.01em; }
+  .brand span{ color: var(--brass); }
+  .nav-links{ display:flex; gap: 28px; font-size: 14px; }
+  .nav-links a{ text-decoration:none; opacity:0.75; transition: opacity .15s; }
+  .nav-links a:hover{ opacity:1; }
+  .lang-note{ font-size: 12px; opacity: 0.55; }
+
+  /* ---------- Hero ---------- */
+  .hero{ padding: 96px 0 72px; position:relative; overflow:hidden; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--brass); margin-bottom: 22px; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{ content:''; width: 26px; height:1px; background: var(--brass); display:inline-block; }
+  h1{
+    font-family:'Source Serif 4', serif; font-weight: 600;
+    font-size: clamp(34px, 5.4vw, 58px); line-height: 1.08; margin: 0 0 26px; max-width: 760px;
+  }
+  h1 em{ font-style: italic; color: var(--brass); }
+  .lede{ font-size: 18px; line-height: 1.6; max-width: 560px; color: #D9D3C2; margin: 0 0 36px; }
+  .cta-row{ display:flex; gap:16px; flex-wrap:wrap; align-items:center; }
+  .btn{
+    font-family:'IBM Plex Mono', monospace; font-size: 13px; letter-spacing: 0.04em;
+    padding: 14px 24px; border-radius: 3px; text-decoration:none; display:inline-block;
+    transition: transform .15s ease, background .15s ease;
+  }
+  .btn-primary{ background: var(--brass); color: var(--ink); font-weight: 600; }
+  .btn-primary:hover{ transform: translateY(-1px); background:#DBB637; }
+  .btn-ghost{ border: 1px solid var(--line); color: var(--paper); opacity:0.85; }
+  .btn-ghost:hover{ opacity:1; border-color: rgba(244,239,227,0.35); }
+
+  /* ---------- Extraction visual (signature element) ---------- */
+  .demo{
+    margin-top: 64px; display:grid; grid-template-columns: 1.1fr 1fr; gap: 0;
+    border: 1px solid var(--line); border-radius: 4px; overflow:hidden;
+    background: var(--ink-2);
+  }
+  .demo-doc{ padding: 30px 32px; border-right: 1px solid var(--line); }
+  .demo-doc .doc-label{ font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:.5; margin-bottom:14px; letter-spacing:.08em;}
+  .demo-doc p{ font-family:'Source Serif 4', serif; font-size: 14.5px; line-height: 1.75; color: #C7C1B0; margin: 0 0 12px; }
+  .hl{ background: rgba(201,162,39,0.22); padding: 1px 3px; border-radius: 2px; color: var(--paper); }
+  .demo-fields{ padding: 30px 32px; }
+  .demo-fields .doc-label{ font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:.5; margin-bottom:14px; letter-spacing:.08em;}
+  .field-row{
+    display:flex; justify-content:space-between; gap: 14px; padding: 11px 0;
+    border-bottom: 1px dashed var(--line); font-family:'IBM Plex Mono', monospace; font-size: 12.5px;
+  }
+  .field-row:last-child{ border-bottom:none; }
+  .field-key{ color: var(--brass); white-space:nowrap; }
+  .field-val{ color: #D9D3C2; text-align:right; }
+
+  /* ---------- Section shared ---------- */
+  section{ padding: 84px 0; border-top: 1px solid var(--line); }
+  .section-head{ margin-bottom: 48px; max-width: 620px; }
+  .section-head .eyebrow{ margin-bottom: 14px; }
+  h2{ font-family:'Source Serif 4', serif; font-weight:600; font-size: clamp(26px, 3.4vw, 36px); margin: 0 0 14px; }
+  .section-head p{ color:#B9B2A0; line-height:1.6; font-size:15.5px; margin:0; }
+
+  /* ---------- How it works ---------- */
+  .steps{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+  .step{ border-top: 1px solid var(--line); padding-top: 20px; }
+  .step .num{ font-family:'IBM Plex Mono', monospace; color: var(--brass); font-size: 13px; margin-bottom: 12px; }
+  .step h3{ font-family:'Source Serif 4', serif; font-size: 19px; margin: 0 0 10px; font-weight:600; }
+  .step p{ font-size: 14px; line-height: 1.6; color: #B9B2A0; margin:0; }
+
+  /* ---------- Fields chips ---------- */
+  .chips{ display:flex; flex-wrap:wrap; gap: 10px; }
+  .chip{
+    font-family:'IBM Plex Mono', monospace; font-size: 12.5px; border: 1px solid var(--line);
+    padding: 9px 14px; border-radius: 3px; color: #D9D3C2;
+  }
+  .chip.plus{ color: var(--brass); border-color: rgba(201,162,39,0.4); }
+
+  /* ---------- Pricing ---------- */
+  .price-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .price-card{
+    border: 1px solid var(--line); border-radius: 4px; padding: 26px 22px;
+    background: var(--ink-2); transition: border-color .15s;
+  }
+  .price-card:hover{ border-color: rgba(201,162,39,0.4); }
+  .price-card .n{ font-family:'IBM Plex Mono', monospace; font-size: 12px; color: var(--brass); letter-spacing:.06em; margin-bottom: 10px;}
+  .price-card .amount{ font-family:'Source Serif 4', serif; font-size: 30px; font-weight:600; margin-bottom: 4px; }
+  .price-card .per{ font-size: 12px; color:#8f8a7a; font-family:'IBM Plex Mono', monospace;}
+
+  /* ---------- Footer ---------- */
+  footer{ padding: 48px 0 60px; border-top: 1px solid var(--line); }
+  .foot-row{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 16px; }
+  footer p{ font-size: 13px; color: #8f8a7a; margin:0; }
+  .langs{ display:flex; gap:10px; font-family:'IBM Plex Mono', monospace; font-size: 12px; color:#8f8a7a; }
+
+  @media (max-width: 760px){
+    .demo{ grid-template-columns: 1fr; }
+    .demo-doc{ border-right:none; border-bottom: 1px solid var(--line); }
+    .steps{ grid-template-columns: 1fr; }
+    .price-grid{ grid-template-columns: repeat(2,1fr); }
+    .nav-links{ display:none; }
+  }
+  @media (max-width: 480px){
+    .price-grid{ grid-template-columns: 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ scroll-behavior: auto !important; transition: none !important; }
+  }
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="lang-bar">
-            <label for="langSelect" data-i18n="lang_label">Idioma / Language / Idioma:</label>
-            <select id="langSelect">
-                <option value="es">Español</option>
-                <option value="en">English</option>
-                <option value="pt">Português</option>
-            </select>
-        </div>
 
-        <h1>📄 <span data-i18n="page_title">Extracción de Datos de Artículos Científicos</span></h1>
-        <p class="subtitle" data-i18n="subtitle">Usa DeepSeek para extraer información estructurada de tus PDFs</p>
+<header>
+  <div class="wrap nav">
+    <div class="brand">Ficha<span>.</span><span>Científica</span></div>
+    <nav class="nav-links">
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="#campos">Campos extraídos</a>
+      <a href="#precios">Precios</a>
+    </nav>
+    <div class="lang-note mono">ES · EN · PT</div>
+  </div>
+</header>
 
-        <div id="accountBar" class="account-bar" style="display:none;">
-            <span id="accountEmail"></span>
-            <span id="accountCredits" class="badge"></span>
-            <button id="buyCreditsBtn" class="btn primary small" data-i18n="buy_credits_btn">💳 Comprar créditos</button>
-        </div>
-
-        <div id="pricingModal" class="pricing-modal" style="display:none;">
-            <div class="pricing-modal-content">
-                <button id="closePricingBtn" class="pricing-close">✕</button>
-                <h2 data-i18n="pricing_title">Comprar créditos</h2>
-                <div id="pricingTiers" class="pricing-tiers"></div>
-            </div>
-        </div>
-
-        <div class="step" id="identifyStep">
-            <h2 data-i18n="identify_title">0. Identifícate</h2>
-            <p data-i18n="identify_desc">Escribe tu email para empezar. Tu primer artículo es gratis.</p>
-            <div class="input-group">
-                <input type="email" id="emailInput" placeholder="tu@email.com">
-                <button id="identifyBtn" class="btn primary" data-i18n="identify_btn">Continuar</button>
-            </div>
-            <div id="identifyStatus" class="status"></div>
-        </div>
-
-        <div id="mainSteps" style="display:none;">
-
-        <div class="step">
-            <h2 data-i18n="step1_title">1. Define las columnas</h2>
-            <p data-i18n="step1_desc">Marca las secciones típicas que quieres extraer, o agrega otras personalizadas:</p>
-
-            <div id="presetColumns" class="preset-columns"></div>
-
-            <p class="custom-columns-label" data-i18n="custom_columns_label">Otras columnas personalizadas (separadas por comas):</p>
-            <div class="input-group">
-                <input type="text" id="columnsInput" placeholder="Ej: Composición química, Aplicaciones">
-                <button id="setColumnsBtn" class="btn primary" data-i18n="define_columns_btn">Definir columnas</button>
-            </div>
-            <div id="columnsStatus" class="status"></div>
-        </div>
-
-        <div class="step">
-            <h2 data-i18n="step2_title">2. Sube los artículos</h2>
-            <p data-i18n="step2_desc">Selecciona uno o varios archivos PDF:</p>
-            <input type="file" id="fileInput" multiple accept=".pdf">
-            <button id="uploadBtn" class="btn primary" data-i18n="upload_btn">Subir y procesar</button>
-            <div id="uploadStatus" class="status"></div>
-        </div>
-
-        <div class="step">
-            <h2 data-i18n="step3_title">3. Resultados</h2>
-            <div id="resultsContainer">
-                <p class="placeholder" data-i18n="results_placeholder">Aún no hay datos procesados.</p>
-            </div>
-        </div>
-
-        <div class="step">
-            <p class="format-label" data-i18n="format_label">Formato de descarga:</p>
-            <select id="exportFormat" class="format-select">
-                <option value="xlsx">Excel (.xlsx)</option>
-                <option value="csv">CSV (.csv)</option>
-                <option value="json">JSON (.json)</option>
-            </select>
-            <button id="generateExcelBtn" class="btn success" data-i18n="generate_excel_btn">📊 Generar Excel</button>
-            <button id="resetBtn" class="btn danger" data-i18n="reset_btn">🔄 Reiniciar</button>
-        </div>
-
-        </div>
+<section class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Extracción de datos científicos con IA</div>
+    <h1>Cada artículo en PDF, convertido en <em>una ficha de datos</em> lista para tu tabla.</h1>
+    <p class="lede">Sube tus artículos científicos y obtén título, autores, DOI, resumen, metodología, resultados y lo que necesites — organizado en Excel, CSV o JSON, en minutos en vez de horas de lectura y transcripción manual.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#precios">Ver precios</a>
+      <a class="btn btn-ghost" href="#como-funciona">Cómo funciona</a>
     </div>
 
-    <script src="script.js"></script>
+    <div class="demo">
+      <div class="demo-doc">
+        <div class="doc-label mono">ARTÍCULO ORIGINAL (PDF)</div>
+        <p><span class="hl">Valorization of banana peel waste through coupled dark fermentation</span> and microbial fuel cells: bioenergy production and life cycle assessment. <span class="hl">Chandra, S., Devianto, L. A., Pandit, S.</span> et al.</p>
+        <p>Sustainable Energy Technologies and Assessments, 86, 104846. <span class="hl">DOI: 10.1016/j.seta.2026.104846</span></p>
+        <p>Abstract — This study evaluates a coupled system for converting banana peel biomass into bioenergy while assessing its full life-cycle environmental impact across three treatment stages...</p>
+      </div>
+      <div class="demo-fields">
+        <div class="doc-label mono">FICHA EXTRAÍDA</div>
+        <div class="field-row"><span class="field-key">título</span><span class="field-val">Valorization of banana peel waste...</span></div>
+        <div class="field-row"><span class="field-key">autores</span><span class="field-val">Chandra, Devianto, Pandit...</span></div>
+        <div class="field-row"><span class="field-key">doi</span><span class="field-val">10.1016/j.seta.2026.104846</span></div>
+        <div class="field-row"><span class="field-key">resumen</span><span class="field-val">Sistema acoplado para bioenergía...</span></div>
+        <div class="field-row"><span class="field-key">revista</span><span class="field-val">Sustain. Energy Technol. Assess.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="como-funciona">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Proceso</div>
+      <h2>De montón de PDFs a tabla comparable</h2>
+      <p>Pensado para revisiones sistemáticas, estados del arte y tesis donde hay que procesar decenas o cientos de artículos.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="num">01</div>
+        <h3>Define qué necesitas</h3>
+        <p>Marca las secciones que te interesan (resumen, metodología, resultados...) o pide cualquier campo personalizado.</p>
+      </div>
+      <div class="step">
+        <div class="num">02</div>
+        <h3>Sube tus artículos</h3>
+        <p>Uno o cientos a la vez. El primero es gratis para que veas la calidad de la extracción antes de comprar.</p>
+      </div>
+      <div class="step">
+        <div class="num">03</div>
+        <h3>Descarga tu tabla</h3>
+        <p>Excel, CSV o JSON, con una fila por artículo, lista para analizar, filtrar o cruzar con tu bibliografía.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="campos">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Campos disponibles</div>
+      <h2>Lo típico de un artículo, o exactamente lo tuyo</h2>
+      <p>Diez secciones predefinidas, más cualquier campo adicional que escribas en texto libre.</p>
+    </div>
+    <div class="chips">
+      <span class="chip">título</span>
+      <span class="chip">autores</span>
+      <span class="chip">doi</span>
+      <span class="chip">resumen</span>
+      <span class="chip">introducción</span>
+      <span class="chip">materiales y métodos</span>
+      <span class="chip">resultados</span>
+      <span class="chip">discusión</span>
+      <span class="chip">conclusión</span>
+      <span class="chip">referencias</span>
+      <span class="chip plus">+ tus propios campos</span>
+    </div>
+  </div>
+</section>
+
+<section id="precios">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Precios</div>
+      <h2>Compra créditos por bloque, sin suscripción</h2>
+      <p>1 artículo gratis para probar. Después, paga solo por lo que uses — sin mensualidades.</p>
+    </div>
+    <div class="price-grid">
+      <div class="price-card"><div class="n">10 ARTÍCULOS</div><div class="amount">$4.99</div><div class="per">USD · $0.50 / artículo</div></div>
+      <div class="price-card"><div class="n">20 ARTÍCULOS</div><div class="amount">$8.99</div><div class="per">USD · $0.45 / artículo</div></div>
+      <div class="price-card"><div class="n">50 ARTÍCULOS</div><div class="amount">$14.99</div><div class="per">USD · $0.30 / artículo</div></div>
+      <div class="price-card"><div class="n">100 ARTÍCULOS</div><div class="amount">$24.99</div><div class="per">USD · $0.25 / artículo</div></div>
+      <div class="price-card"><div class="n">150 ARTÍCULOS</div><div class="amount">$32.99</div><div class="per">USD · $0.22 / artículo</div></div>
+      <div class="price-card"><div class="n">200 ARTÍCULOS</div><div class="amount">$39.99</div><div class="per">USD · $0.20 / artículo</div></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-row">
+    <p>Ficha Científica — extracción de datos de artículos científicos con IA.</p>
+    <div class="langs"><span>ES</span><span>·</span><span>EN</span><span>·</span><span>PT</span></div>
+  </div>
+</footer>
+
 </body>
 </html>
